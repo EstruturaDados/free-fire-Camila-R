@@ -15,48 +15,86 @@ typedef struct {
     int quantidade;
 } Mochila;
 
-// Função de limpar buffer
-void cleanBuffer() {
+// Limpa buffer do teclado
+void cleanBuffer(){
     int c;
     while ((c = getchar()) != '\n' && c != EOF);
 }
 
-// Função para alocar memória para a mochila
-void alocMemoria(Mochila **itensNaMochila) {
+// Aloca memória para a mochila
+void alocMemoria(Mochila **itensNaMochila){
     *itensNaMochila = calloc(1, sizeof(Mochila));
     if (*itensNaMochila == NULL) {
-        printf("Error: Falha ao alocar memória.\n");
+        printf("Erro: Falha ao alocar memória.\n");
         exit(1);
     }
 }
 
-// Função de listar itens
-void listarItens(Mochila *itensNaMochila) {
+// Função de listar itens (com colunas alinhadas)
+void listarItens(Mochila *itensNaMochila){
     printf("\n=====================================================\n");
     printf("============== ITENS NA MOCHILA (%d/10) ==============\n", itensNaMochila->quantidade);
     printf("=====================================================\n");
 
-    if (itensNaMochila->quantidade == 0) {
-        printf("A mochila está vazia \n");
+    if (itensNaMochila->quantidade == 0){
+        printf("A mochila está vazia.\n");
         return;
     }
 
-    printf("         NOME          |     TIPO     |  QUANTIDADE  \n");
-    printf("=====================================================\n");
+    printf("%-20s | %-12s | %-10s\n", "NOME", "TIPO", "QUANTIDADE");
+    printf("-----------------------------------------------------\n");
 
-    for (int i = 0; i < itensNaMochila->quantidade; i++) {
-        printf("%-20s | %-12s | %5d\n",
+    for (int i = 0; i < itensNaMochila->quantidade; i++){
+        printf("%-20s | %-12s | %-10d\n",
             itensNaMochila->itens[i].nome,
             itensNaMochila->itens[i].tipo,
             itensNaMochila->itens[i].unidade
         );
     }
+
+    printf("=====================================================\n");
 }
 
-// Inserir item — versão corrigida, lendo direto no struct!
-void inserirItem(Mochila *itensNaMochila) {
+// Função de buscar item na mochila
+void buscarItemNaMochila(Mochila *itensNaMochila){
 
-    if (itensNaMochila->quantidade == MAX_ITENS) {
+    char nomeItem[30];
+    // int tamanho = sizeof(itensNaMochila) / sizeof(itensNaMochila[0]);
+    int tamanho = itensNaMochila->quantidade;
+
+    printf("=====================================================\n");
+    printf("==============  BUSCAR ITEM NA MOCHILA ==============\n");
+    printf("=====================================================\n");
+
+    printf("Digite o nome do item a ser encontrado: ");
+    fgets(nomeItem, sizeof(nomeItem), stdin);
+    nomeItem[strcspn(nomeItem, "\n")] = '\0';
+
+    // busca sequencial iterativa
+    for (int i = 0; i < tamanho; i++) {
+        if (strcmp(itensNaMochila->itens[i].nome, nomeItem) == 0) {
+
+            printf("==============  ITEM ENCONTRADO! ==============\n");
+            printf("Nome: %-20s \nTipo: %-12s \nQuantidade: %-10d\n",
+                itensNaMochila->itens[i].nome,
+                itensNaMochila->itens[i].tipo,
+                itensNaMochila->itens[i].unidade
+            );
+            printf("=====================================================\n");
+
+            return i;
+        }
+    }
+    printf("==============  ITEM NÃO ENCONTRADO! ==============\n");
+    printf("O Item '%s' NÃO foi encontrado na mochila\n", nomeItem);
+    printf("=====================================================\n");
+    return -1;
+
+}
+
+// Função de inserir item (100% fgets, 0% strcpy)
+void inserirItem(Mochila *itensNaMochila){
+    if (itensNaMochila->quantidade == MAX_ITENS){
         printf("ERRO: Mochila cheia! Não é possível inserir novo item.\n");
         return;
     }
@@ -67,7 +105,6 @@ void inserirItem(Mochila *itensNaMochila) {
     printf("===============  ADICIONAR NOVO ITEM  ===============\n");
     printf("=====================================================\n");
 
-    // NOME
     printf("Nome do item: ");
     fgets(itensNaMochila->itens[index].nome,
           sizeof(itensNaMochila->itens[index].nome),
@@ -76,7 +113,6 @@ void inserirItem(Mochila *itensNaMochila) {
         strcspn(itensNaMochila->itens[index].nome, "\n")
     ] = '\0';
 
-    // TIPO
     printf("Tipo do item: ");
     fgets(itensNaMochila->itens[index].tipo,
           sizeof(itensNaMochila->itens[index].tipo),
@@ -85,57 +121,60 @@ void inserirItem(Mochila *itensNaMochila) {
         strcspn(itensNaMochila->itens[index].tipo, "\n")
     ] = '\0';
 
-    // QUANTIDADE
     printf("Quantidade: ");
     scanf("%d", &itensNaMochila->itens[index].unidade);
     cleanBuffer();
 
     itensNaMochila->quantidade++;
 
-    printf("\nItem '%s' adicionado com sucesso!\n",
+    printf("Item '%s' adicionado com sucesso!\n",
         itensNaMochila->itens[index].nome);
 
     listarItens(itensNaMochila);
 }
 
-// Remover item
-void removerItem(Mochila *itensNaMochila) {
-    char input[50];
-    int pos = -1;
+// Função de remover item
+void removerItem(Mochila *itensNaMochila){
+    if (itensNaMochila->quantidade == 0){
+        printf("A mochila já está vazia!\n");
+        return;
+    }
 
+    char nomeRemover[30];
     printf("=====================================================\n");
     printf("==================  REMOVER ITEM  ==================\n");
     printf("=====================================================\n");
+
     printf("Digite o nome do item a ser removido: ");
+    fgets(nomeRemover, sizeof(nomeRemover), stdin);
+    nomeRemover[strcspn(nomeRemover, "\n")] = '\0';
 
-    fgets(input, sizeof(input), stdin);
-    input[strcspn(input, "\n")] = '\0';
+    int pos = -1;
 
-    for (int i = 0; i < itensNaMochila->quantidade; i++) {
-        if (strcmp(itensNaMochila->itens[i].nome, input) == 0) {
+    for (int i = 0; i < itensNaMochila->quantidade; i++){
+        if (strcmp(itensNaMochila->itens[i].nome, nomeRemover) == 0){
             pos = i;
             break;
         }
     }
 
-    if (pos == -1) {
-        printf("ERRO : ITEM '%s' NÃO ENCONTRADO NA LISTA \n", input);
+    if (pos == -1){
+        printf("ERRO: Item '%s' não encontrado.\n", nomeRemover);
         return;
     }
 
-    for (int i = pos; i < itensNaMochila->quantidade - 1; i++) {
+    for (int i = pos; i < itensNaMochila->quantidade - 1; i++){
         itensNaMochila->itens[i] = itensNaMochila->itens[i + 1];
     }
 
     itensNaMochila->quantidade--;
 
     printf("Item removido com sucesso!\n");
-
     listarItens(itensNaMochila);
 }
 
-// Menu
-void menu(Mochila *itensNaMochila) {
+// Menu principal
+void menu(Mochila *itensNaMochila){
     int escolha;
 
     do {
@@ -146,35 +185,39 @@ void menu(Mochila *itensNaMochila) {
 
         printf("1 - Adicionar item\n");
         printf("2 - Remover item\n");
-        printf("3 - Listar Itens na mochila\n");
+        printf("3 - Listar itens\n");
+        printf("4 - Buscar item na mochila\n");
         printf("0 - Sair\n");
         printf("-----------------------------------------------------\n");
         printf("Escolha uma opção: ");
 
-        scanf("%d", &escolha);
+        if (scanf("%d", &escolha) != 1){
+            printf("Entrada inválida! Digite um número.\n");
+            cleanBuffer();
+            continue;
+        }
+
         cleanBuffer();
 
-        switch (escolha) {
+        switch (escolha){
             case 1: inserirItem(itensNaMochila); break;
             case 2: removerItem(itensNaMochila); break;
             case 3: listarItens(itensNaMochila); break;
+            case 4: buscarItemNaMochila(itensNaMochila); break;
             case 0: printf("\nSaindo do jogo...\n"); break;
-            default: printf("\nOpção inválida!\n");
+            default: printf("Opção inválida!\n");
         }
 
     } while (escolha != 0);
 }
 
-int main() {
+int main(){
     Mochila *itensNaMochila = NULL;
-
     alocMemoria(&itensNaMochila);
 
     itensNaMochila->quantidade = 0;
 
     menu(itensNaMochila);
-
-    free(itensNaMochila);
 
     return 0;
 }
