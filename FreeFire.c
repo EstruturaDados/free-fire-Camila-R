@@ -8,6 +8,7 @@ typedef struct {
     char nome[30];
     char tipo[20];
     int unidade;
+    int prioridade;
 } Item;
 
 typedef struct {
@@ -32,6 +33,9 @@ void alocMemoria(Mochila **itensNaMochila){
 
 // Função de listar itens (com colunas alinhadas)
 void listarItens(Mochila *itensNaMochila){
+    printf("\n");
+    printf("\n");
+    printf("\n");
     printf("\n=====================================================\n");
     printf("============== ITENS NA MOCHILA (%d/10) ==============\n", itensNaMochila->quantidade);
     printf("=====================================================\n");
@@ -41,26 +45,83 @@ void listarItens(Mochila *itensNaMochila){
         return;
     }
 
-    printf("%-20s | %-12s | %-10s\n", "NOME", "TIPO", "QUANTIDADE");
+    printf("%-20s | %-12s | %-10s | %-10s\n", "NOME", "TIPO", "QUANTIDADE", "PRIORIDADE");
     printf("-----------------------------------------------------\n");
 
     for (int i = 0; i < itensNaMochila->quantidade; i++){
-        printf("%-20s | %-12s | %-10d\n",
+        printf("%-20s | %-12s | %-10d | %-10d\n",
             itensNaMochila->itens[i].nome,
             itensNaMochila->itens[i].tipo,
-            itensNaMochila->itens[i].unidade
+            itensNaMochila->itens[i].unidade,
+            itensNaMochila->itens[i].prioridade
         );
     }
 
     printf("=====================================================\n");
 }
+// Função de ordenar por nome por Insertion Sort
+void ordenarItensNaMochilaPorNome(Mochila *itensNaMochila){
 
-// Função de buscar item na mochila
+    Item *lista = itensNaMochila->itens;
+    int tamanho = itensNaMochila->quantidade;
+
+    for (int i = 1; i < tamanho; i++) {
+
+        Item chave = lista[i];
+        int j = i - 1;
+
+        // Move os elementos em ordem alfabética uma posição à frente
+        while (j >= 0 && strcmp(lista[j].nome, chave.nome) > 0) {
+            lista[j + 1] = lista[j];
+            j--;
+        }
+
+        lista[j + 1] = chave;
+    }
+
+    listarItens(itensNaMochila);
+
+}
+
+// Função auxiliar para o selection sort
+void trocar(Item* a, Item* b) {
+    Item temp = *a;
+    *a = *b;
+    *b = temp;
+}
+
+// Função de ordenar por nome por Selection Sort
+void ordenarItensNaMochilaPorPrioridade(Mochila *itensNaMochila){
+
+    Item *lista = itensNaMochila->itens;
+    int tamanho = itensNaMochila->quantidade;
+    
+    for (int i = 0; i < tamanho - 1; i++) {
+        int indiceMenor = i;
+
+        for (int j = i + 1; j < tamanho; j++) {
+            if (lista[j].prioridade < lista[indiceMenor].prioridade) {
+                indiceMenor = j;
+            }
+        }
+        if (indiceMenor != i) {
+            trocar(&lista[i], &lista[indiceMenor]);
+        }
+        
+    }
+
+    listarItens(itensNaMochila);
+
+}
+
+// Função de buscar item na mochila por Busca Binária
 void buscarItemNaMochila(Mochila *itensNaMochila){
 
     char nomeItem[30];
-    // int tamanho = sizeof(itensNaMochila) / sizeof(itensNaMochila[0]);
     int tamanho = itensNaMochila->quantidade;
+    Item *lista = itensNaMochila->itens;
+    int inicio = 0;
+    int fim = tamanho - 1;
 
     printf("=====================================================\n");
     printf("==============  BUSCAR ITEM NA MOCHILA ==============\n");
@@ -70,21 +131,29 @@ void buscarItemNaMochila(Mochila *itensNaMochila){
     fgets(nomeItem, sizeof(nomeItem), stdin);
     nomeItem[strcspn(nomeItem, "\n")] = '\0';
 
-    // busca sequencial iterativa
-    for (int i = 0; i < tamanho; i++) {
-        if (strcmp(itensNaMochila->itens[i].nome, nomeItem) == 0) {
+    // busca binária
+    while (inicio <= fim) {
+        int meio = (inicio + fim) / 2;
+        int cmp = strcmp(lista[meio].nome, nomeItem);
 
+        if (cmp == 0){
             printf("==============  ITEM ENCONTRADO! ==============\n");
-            printf("Nome: %-20s \nTipo: %-12s \nQuantidade: %-10d\n",
-                itensNaMochila->itens[i].nome,
-                itensNaMochila->itens[i].tipo,
-                itensNaMochila->itens[i].unidade
+            printf("Nome: %-20s \nTipo: %-12s \nQuantidade: %-10d \nPrioridade: %-10d\n",
+                itensNaMochila->itens[meio].nome,
+                itensNaMochila->itens[meio].tipo,
+                itensNaMochila->itens[meio].unidade,
+                itensNaMochila->itens[meio].prioridade
             );
             printf("=====================================================\n");
-
-            return i;
+            return meio;
         }
+        else if (cmp < 0)
+            inicio = meio + 1;
+        else
+            fim = meio - 1;
     }
+
+
     printf("==============  ITEM NÃO ENCONTRADO! ==============\n");
     printf("O Item '%s' NÃO foi encontrado na mochila\n", nomeItem);
     printf("=====================================================\n");
@@ -123,6 +192,10 @@ void inserirItem(Mochila *itensNaMochila){
 
     printf("Quantidade: ");
     scanf("%d", &itensNaMochila->itens[index].unidade);
+    cleanBuffer();
+
+    printf("Prioridade: ");
+    scanf("%d", &itensNaMochila->itens[index].prioridade);
     cleanBuffer();
 
     itensNaMochila->quantidade++;
@@ -186,7 +259,9 @@ void menu(Mochila *itensNaMochila){
         printf("1 - Adicionar item\n");
         printf("2 - Remover item\n");
         printf("3 - Listar itens\n");
-        printf("4 - Buscar item na mochila\n");
+        printf("4 - Ordenar itens na mochila por nome\n");
+        printf("5 - Ordenar itens na mochila por prioridade\n");
+        printf("6 - Buscar item na mochila\n");
         printf("0 - Sair\n");
         printf("-----------------------------------------------------\n");
         printf("Escolha uma opção: ");
@@ -203,7 +278,9 @@ void menu(Mochila *itensNaMochila){
             case 1: inserirItem(itensNaMochila); break;
             case 2: removerItem(itensNaMochila); break;
             case 3: listarItens(itensNaMochila); break;
-            case 4: buscarItemNaMochila(itensNaMochila); break;
+            case 4: ordenarItensNaMochilaPorNome(itensNaMochila); break;
+            case 5: ordenarItensNaMochilaPorPrioridade(itensNaMochila); break;
+            case 6: buscarItemNaMochila(itensNaMochila); break;
             case 0: printf("\nSaindo do jogo...\n"); break;
             default: printf("Opção inválida!\n");
         }
